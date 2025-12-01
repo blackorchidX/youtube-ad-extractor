@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Ad URL Extractor</title>
+    <!-- Linking the CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="glass-card">
+        <h1>Ad URL Extractor</h1>
+        <!-- Updated Instructions -->
+        <p class="subtitle">Right-click a playing ad > Copy debug info > Paste below.</p>
+
+        <textarea id="debugInput" placeholder='Paste Debug Info here...'></textarea>
+        
+        <button class="action-btn" onclick="extractAd()">Get Ad URL</button>
+
+        <div id="errorBox" class="error-msg"></div>
+
+        <div id="resultBox" class="result-container">
+            <div class="result-item">
+                <div class="result-label">Advertiser</div>
+                <div class="result-value" id="brandDisplay">--</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Video URL</div>
+                <div class="result-value">
+                    <a href="#" id="urlDisplay" class="link-style" target="_blank">--</a>
+                    <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function extractAd() {
+            const input = document.getElementById('debugInput').value;
+            const resultBox = document.getElementById('resultBox');
+            const errorBox = document.getElementById('errorBox');
+            
+            // Reset UI
+            resultBox.style.display = 'none';
+            errorBox.style.display = 'none';
+    
+            if (!input.trim()) {
+                showError("Please paste the debug info first.");
+                return;
+            }
+    
+            // Regex Extraction
+            // 1. Look for Ad ID
+            let videoIdMatch = input.match(/"addebug_videoId":\s*"([^"]+)"/);
+            if (!videoIdMatch) {
+                videoIdMatch = input.match(/"addocid":\s*"([^"]+)"/);
+            }
+    
+            // 2. Look for Brand Name
+            const brandMatch = input.match(/"adcbrand":\s*"([^"]+)"/);
+    
+            if (videoIdMatch && videoIdMatch[1]) {
+                const videoId = videoIdMatch[1];
+                const fullUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                let brand = brandMatch ? brandMatch[1] : "Unknown";
+                
+                // Capitalize Brand
+                brand = brand.charAt(0).toUpperCase() + brand.slice(1);
+    
+                // Populate Results
+                document.getElementById('brandDisplay').textContent = brand;
+                const urlLink = document.getElementById('urlDisplay');
+                urlLink.href = fullUrl;
+                urlLink.textContent = fullUrl;
+                
+                resultBox.style.display = 'block';
+            } else {
+                // Check for regular video ID to give specific error
+                const mainVideoMatch = input.match(/"debug_videoId":\s*"([^"]+)"/);
+                if (mainVideoMatch) {
+                    showError("Found a regular video, but no Ad. Ensure the Ad is playing when you copy the info.");
+                } else {
+                    showError("Invalid data. Could not find any video ID.");
+                }
+            }
+        }
+    
+        function showError(msg) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.textContent = msg;
+            errorBox.style.display = 'block';
+        }
+    
+        function copyToClipboard() {
+            const urlText = document.getElementById('urlDisplay').href;
+            navigator.clipboard.writeText(urlText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = "Copied!";
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
